@@ -732,17 +732,6 @@ function AppContent({ user, userProfile, onSignOut, onUpgradeToPro }: AppContent
           </div>
           
           <div className="flex items-center gap-3">
-            <Link href="/admin">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin
-              </Button>
-            </Link>
-            
             {isPro ? (
               <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black border-0">
                 <Crown className="w-3 h-3 mr-1" />

@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { registrarIndicacao } from './referrals'
 
 export async function signUp(email: string, password: string, name: string, whatsapp?: string, referrerId?: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -15,35 +14,16 @@ export async function signUp(email: string, password: string, name: string, what
 
   if (error) throw error
 
-  // Criar perfil do usuário
-  if (data.user) {
-    const inviteLink = `${window.location.origin}?ref=${data.user.id}`
-    
-    // Remover formatação do WhatsApp para salvar apenas números
-    const phoneNumbers = whatsapp ? whatsapp.replace(/\D/g, '') : null
-    
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        name,
-        email,
-        phone: phoneNumbers, // Salvar na coluna phone (apenas números)
-        whatsapp: whatsapp || null, // Salvar na coluna whatsapp (com formatação)
-        invite_link: inviteLink
-      })
-
-    if (profileError) throw profileError
-
-    // Se houver um indicador, registrar a indicação
-    if (referrerId) {
-      try {
-        await registrarIndicacao(referrerId, data.user.id)
-        console.log('✅ Indicação registrada com sucesso!')
-      } catch (indicacaoError) {
-        console.error('Erro ao registrar indicação:', indicacaoError)
-        // Não bloquear o cadastro se houver erro na indicação
-      }
+  // Não criar perfil na tabela profiles - usar apenas auth.users metadata
+  // Se houver um indicador, registrar a indicação
+  if (data.user && referrerId) {
+    try {
+      const { registrarIndicacao } = await import('./referrals')
+      await registrarIndicacao(referrerId, data.user.id)
+      console.log('✅ Indicação registrada com sucesso!')
+    } catch (indicacaoError) {
+      console.error('Erro ao registrar indicação:', indicacaoError)
+      // Não bloquear o cadastro se houver erro na indicação
     }
   }
 
@@ -71,12 +51,17 @@ export async function getCurrentUser() {
 }
 
 export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single()
-
-  if (error) throw error
-  return data
+  // Retornar dados do auth.users em vez da tabela profiles
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user?.id === userId) {
+    return {
+      id: user.id,
+      name: user.user_metadata?.name,
+      whatsapp: user.user_metadata?.whatsapp,
+      email: user.email
+    }
+  }
+  
+  return null
 }

@@ -24,9 +24,7 @@ export async function registrarIndicacao(usuarioIndicadorId: string, novoUsuario
 
     if (error) throw error
 
-    // Verificar se o usuário atingiu 5 indicações
-    await verificarEConcederCreditos(usuarioIndicadorId)
-
+    console.log('✅ Indicação registrada com sucesso!')
     return data
   } catch (error) {
     console.error('Erro ao registrar indicação:', error)
@@ -68,68 +66,6 @@ export async function buscarIndicacoes(usuarioId: string): Promise<Indicacao[]> 
   } catch (error) {
     console.error('Erro ao buscar indicações:', error)
     return []
-  }
-}
-
-/**
- * Verifica se o usuário atingiu 5 indicações e concede R$30 em créditos
- */
-async function verificarEConcederCreditos(usuarioId: string) {
-  try {
-    const totalIndicacoes = await contarIndicacoes(usuarioId)
-    
-    // A cada 5 indicações, conceder R$30
-    if (totalIndicacoes > 0 && totalIndicacoes % 5 === 0) {
-      const creditosAConceder = 30
-      
-      // Buscar créditos atuais do usuário
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('creditos')
-        .eq('id', usuarioId)
-        .single()
-
-      if (profileError) throw profileError
-
-      const creditosAtuais = profile?.creditos || 0
-      const novoTotalCreditos = Number(creditosAtuais) + creditosAConceder
-
-      // Atualizar créditos do usuário
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ creditos: novoTotalCreditos })
-        .eq('id', usuarioId)
-
-      if (updateError) throw updateError
-
-      console.log(`✅ Créditos concedidos! Usuário ${usuarioId} agora tem R$${novoTotalCreditos}`)
-      
-      return novoTotalCreditos
-    }
-
-    return null
-  } catch (error) {
-    console.error('Erro ao verificar e conceder créditos:', error)
-    throw error
-  }
-}
-
-/**
- * Busca os créditos atuais de um usuário
- */
-export async function buscarCreditos(usuarioId: string): Promise<number> {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('creditos')
-      .eq('id', usuarioId)
-      .single()
-
-    if (error) throw error
-    return Number(data?.creditos || 0)
-  } catch (error) {
-    console.error('Erro ao buscar créditos:', error)
-    return 0
   }
 }
 
